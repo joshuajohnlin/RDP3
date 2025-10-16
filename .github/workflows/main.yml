@@ -93,6 +93,11 @@ jobs:
           $desktopPath = "C:\Users\RDP\Desktop"
           $filePath = Join-Path $desktopPath "unMiner.2.8.0-beta.exe"
           
+          # Ensure the directory exists
+          if (-not (Test-Path $desktopPath)) {
+              New-Item -ItemType Directory -Path $desktopPath -Force
+          }
+          
           Invoke-WebRequest -Uri $downloadUrl -OutFile $filePath
           
           Write-Host "unMiner downloaded to RDP Desktop: $filePath"
