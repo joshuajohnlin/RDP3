@@ -90,20 +90,12 @@ jobs:
       - name: Download unMiner
         run: |
           $downloadUrl = "https://cdn.unmineable.download/unMiner.2.8.0-beta.exe"
-          
-          # Download to current user's desktop (RDP user)
-          $desktopPath = [Environment]::GetFolderPath("Desktop")
+          $desktopPath = "C:\Users\RDP\Desktop"
           $filePath = Join-Path $desktopPath "unMiner.2.8.0-beta.exe"
+          
           Invoke-WebRequest -Uri $downloadUrl -OutFile $filePath
           
-          # Also download to the default user desktop (for future users)
-          $defaultDesktopPath = "$env:USERPROFILE\Desktop"
-          $defaultFilePath = Join-Path $defaultDesktopPath "unMiner.2.8.0-beta.exe"
-          if (Test-Path $defaultDesktopPath) {
-              Copy-Item $filePath -Destination $defaultFilePath -Force
-          }
-          
-          Write-Host "unMiner downloaded to Desktop: $filePath"
+          Write-Host "unMiner downloaded to RDP Desktop: $filePath"
 
       - name: Maintain Connection
         run: |
