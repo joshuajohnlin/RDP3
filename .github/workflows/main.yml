@@ -31,12 +31,14 @@ jobs:
 
       - name: Create RDP User with Secure Password
         run: |
-          $password = "12345678"
+          # Set a complex password that meets Windows complexity requirements
+          $password = "P@ssw0rd12345678"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
           Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
           
+          # Output the actual password used
           echo "RDP_CREDS=User: RDP | Password: $password" >> $env:GITHUB_ENV
           
           if (-not (Get-LocalUser -Name "RDP")) {
