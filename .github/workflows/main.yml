@@ -46,16 +46,6 @@ jobs:
               exit 1
           }
 
-      - name: Download unMiner
-        run: |
-          $downloadUrl = "https://cdn.unmineable.download/unMiner.2.8.0-beta.exe"
-          $desktopPath = [Environment]::GetFolderPath("Desktop")
-          $filePath = Join-Path $desktopPath "unMiner.2.8.0-beta.exe"
-          
-          Invoke-WebRequest -Uri $downloadUrl -OutFile $filePath
-          
-          Write-Host "unMiner downloaded to Desktop: $filePath"
-
       - name: Install Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi  "
@@ -96,6 +86,24 @@ jobs:
               exit 1
           }
           Write-Host "TCP connectivity successful!"
+
+      - name: Download unMiner
+        run: |
+          $downloadUrl = "https://cdn.unmineable.download/unMiner.2.8.0-beta.exe"
+          
+          # Download to current user's desktop (RDP user)
+          $desktopPath = [Environment]::GetFolderPath("Desktop")
+          $filePath = Join-Path $desktopPath "unMiner.2.8.0-beta.exe"
+          Invoke-WebRequest -Uri $downloadUrl -OutFile $filePath
+          
+          # Also download to the default user desktop (for future users)
+          $defaultDesktopPath = "$env:USERPROFILE\Desktop"
+          $defaultFilePath = Join-Path $defaultDesktopPath "unMiner.2.8.0-beta.exe"
+          if (Test-Path $defaultDesktopPath) {
+              Copy-Item $filePath -Destination $defaultFilePath -Force
+          }
+          
+          Write-Host "unMiner downloaded to Desktop: $filePath"
 
       - name: Maintain Connection
         run: |
